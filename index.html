@@ -48,9 +48,12 @@
        if (validKeys.has(input)) {
         msg.style.color = "#00e676";
         msg.innerText = "驗證成功！正在跳轉...";
-    // 延遲 0.8 秒後執行跳轉，讓使用者看得到成功訊息
+   // 使用 Base64 混淆的網址
+            const encodedUrl = "aHR0cHM6Ly93d3cuc3VydmV5Y2FrZS5jb20vcy80MmJtNw==";
+
             setTimeout(() => {
-                window.top.location.href = "https://www.surveycake.com/s/42bm7";
+                // atob() 會把亂碼還原成真正的網址
+                window.top.location.href = atob(encodedUrl);
             }, 800);
         } else {
             msg.innerText = "代碼無效";
