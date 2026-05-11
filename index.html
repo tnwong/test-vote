@@ -1,0 +1,48 @@
+<script>
+    let validKeys = new Set(); // 初始化為空的 Set
+
+    // 1. 網頁載入時，自動從外部檔案讀取名單
+    async function loadWhitelist() {
+        try {
+            const response = await fetch('whitelist.json'); // 讀取外部 json
+            if (!response.ok) throw new Error('無法讀取白名單');
+            
+            const data = await response.json();
+            validKeys = new Set(data); // 將陣列轉換成 Set
+            console.log("白名單載入成功，共 " + validKeys.size + " 組。");
+        } catch (error) {
+            console.error("載入失敗:", error);
+            document.getElementById('msg').innerText = "系統錯誤：無法載入驗證資料。";
+        }
+    }
+
+    // 執行載入動作
+    loadWhitelist();
+
+    // 2. 驗證邏輯
+    function verify() {
+        const inputField = document.getElementById('userInput');
+        const input = inputField.value.trim();
+        const msg = document.getElementById('msg');
+
+        // 如果資料還沒載入完，先不讓使用者驗證
+        if (validKeys.size === 0) {
+            msg.innerText = "資料載入中，請稍候...";
+            return;
+        }
+
+        if (validKeys.has(input)) {
+            msg.style.color = "#00e676";
+            msg.innerText = "● 驗證成功，正在進入系統...";
+            setTimeout(() => {
+                alert("驗證成功！");
+                // window.location.href = "success.html";
+            }, 500);
+        } else {
+            msg.style.color = "#ff5252";
+            msg.innerText = "× 無效的授權碼。";
+            inputField.value = "";
+            inputField.focus();
+        }
+    }
+</script>
