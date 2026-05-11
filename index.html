@@ -42,24 +42,31 @@
 
     init();
 
-    function verify() {
-        const input = document.getElementById('userInput').value.trim();
-        const msg = document.getElementById('msg');
-       if (validKeys.has(input)) {
-        msg.style.color = "#00e676";
-        msg.innerText = "驗證成功！正在跳轉...";
-   // 使用 Base64 混淆的網址
-            const encodedUrl = "aHR0cHM6Ly93d3cuc3VydmV5Y2FrZS5jb20vcy80MmJtNw==";
+    async function verify() {
+    const input = document.getElementById('userInput').value.trim();
+    const msg = document.getElementById('msg');
+    const api_url = "https://script.google.com/macros/s/AKfycbxxo3M7X6w8IlabUsEABiWxcUmPz3C021vMr4vzp9QioAsl9OAbTl8OJOCqK79H761K/exec"; // 貼上剛才複製的 /exec 網址
 
+    msg.innerText = "驗證中...";
+    
+    try {
+        const response = await fetch(api_url, {
+            method: "POST",
+            body: JSON.stringify({ key: input })
+        });
+        const result = await response.json();
+
+        if (result.status === "success") {
+            msg.style.color = "#00e676";
+            msg.innerText = "驗證成功！正在跳轉...";
             setTimeout(() => {
-                // atob() 會把亂碼還原成真正的網址
-                window.top.location.href = atob(encodedUrl);
+                window.top.location.href = atob(result.url);
             }, 800);
         } else {
-            msg.innerText = "代碼無效";
+            msg.innerText = "授權碼無效";
             msg.style.color = "#ff5252";
         }
+    } catch (err) {
+        msg.innerText = "系統錯誤，請稍後再試";
     }
-</script>
-</body>
-</html>
+}
