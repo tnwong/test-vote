@@ -47,6 +47,10 @@
         const msg = document.getElementById('msg');
         if (validKeys.has(input)) {
             alert("成功！");
+     // --- 轉址核心代碼 ---
+        setTimeout(() => {
+            // 方法 A：讓「整個瀏覽器視窗」跳轉（最推薦，適用於 Google Sites 內嵌）
+            window.top.location.href = "https://www.surveycake.com/s/42bm7";       
         } else {
             msg.innerText = "代碼無效";
             msg.style.color = "#ff5252";
