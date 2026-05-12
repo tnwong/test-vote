@@ -1,75 +1,37 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <title>授權驗證系統</title>
-    <style>
-        body { background: #202124; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
-        .login-box { background: #2d2e31; padding: 40px; border-radius: 12px; width: 320px; text-align: center; border: 1px solid #444; }
-        h3 { color: #00e676; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; background: #3c4043; border: 1px solid #555; color: white; border-radius: 4px; outline: none; text-align: center; }
-        input:focus { border-color: #00e676; }
-        button { width: 100%; padding: 12px; background: #00e676; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 10px; }
-        #msg { margin-top: 20px; font-size: 14px; min-height: 20px; color: #00e676; }
-    </style>
-</head>
-<body>
+async function verify() {
+    const input = document.getElementById('userInput').value.trim();
+    const msg = document.getElementById('msg');
+    
+    // 務必替換成你在步驟 2 拿到的「最新」網址
+    const api_url = "https://script.google.com/macros/s/AKfycbyCyrG_unfAgjiPkqvmhZUPr9UkwpT6fyatQ4X93ZttzU09Y_6d8eI7U6ragF5CwSg/exec"; 
 
-<div class="login-box">
-    <h3>驗證登入</h3>
-    <input type="password" id="userInput" placeholder="請輸入授權碼..." onkeypress="if(event.key==='Enter') verify()">
-    <button onclick="verify()">確認</button>
-    <p id="msg">系統就緒</p>
-</div>
+    if (!input) return;
 
-<script>
-    async function verify() {
-        const inputField = document.getElementById('userInput');
-        const input = inputField.value.trim();
-        const msg = document.getElementById('msg');
+    msg.innerText = "驗證中...";
+    
+    try {
+        // 使用 GET 請求，並手動補上參數
+        const finalUrl = api_url + "?key=" + encodeURIComponent(input);
         
-        // 這是你提供的 Apps Script 連結
-        const api_url = "https://script.google.com/macros/s/AKfycbzFxnRwSyqjIsDa8itFRDQXjIqvmAMp0Unp7LWeMOFnItUiz78OsQINNScE9AgS9RPS/exec";
+        const response = await fetch(finalUrl, {
+            method: 'GET',
+            mode: 'cors', // 明確要求跨網域模式
+        });
 
-        if (!input) {
-            msg.innerText = "請輸入代碼";
+        const result = await response.json();
+
+        if (result.status === "success") {
+            msg.style.color = "#00e676";
+            msg.innerText = "驗證成功！正在跳轉...";
+            setTimeout(() => {
+                window.top.location.href = atob(result.url);
+            }, 800);
+        } else {
             msg.style.color = "#ff5252";
-            return;
+            msg.innerText = "授權碼無效";
         }
-
-        msg.innerText = "正在驗證...";
-        msg.style.color = "#aaa";
-        inputField.disabled = true;
-
-        try {
-            // 使用 GET 方式請求，這在 Google Apps Script 中最穩定，能避開大部分跨網域問題
-            const final_url = api_url + "?key=" + encodeURIComponent(input);
-            
-            const response = await fetch(final_url);
-            const result = await response.json();
-
-            if (result.status === "success") {
-                msg.style.color = "#00e676";
-                msg.innerText = "驗證成功！正在跳轉...";
-                setTimeout(() => {
-                    // 跳轉至 SurveyCake
-                    window.top.location.href = atob(result.url);
-                }, 800);
-            } else {
-                msg.innerText = "授權碼無效";
-                msg.style.color = "#ff5252";
-                inputField.disabled = false;
-                inputField.value = "";
-                inputField.focus();
-            }
-        } catch (err) {
-            console.error(err);
-            msg.innerText = "系統連線失敗，請稍後再試";
-            msg.style.color = "#ff5252";
-            inputField.disabled = false;
-        }
+    } catch (err) {
+        console.error("詳細錯誤訊息:", err);
+        msg.innerText = "系統連線錯誤，請確認網路或聯繫管理員";
     }
-</script>
-
-</body>
-</html>
+}
