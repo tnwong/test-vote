@@ -1,8 +1,9 @@
 async function verify() {
-    const input = document.getElementById('userInput').value.trim();
+    const inputField = document.getElementById('userInput');
+    const input = inputField.value.trim();
     const msg = document.getElementById('msg');
     
-    // 1. 確保這行網址是獨立的一行
+    // 網址必須單獨一行，不能跟在 // 後面
     const api_url = "https://script.google.com/macros/s/AKfycbzFxnRwSyqjIsDa8itFRDQXjIqvmAMp0Unp7LweMOFnItUiz780sQINNsce9AgS9RPS/exec";
 
     if (!input) return;
@@ -11,9 +12,9 @@ async function verify() {
     msg.style.color = "#aaa";
 
     try {
-        // 2. 這裡改用一個更通用的 fetch 寫法，避開 Google 的 CORS 嚴格檢查
         const finalUrl = api_url + "?key=" + encodeURIComponent(input);
         
+        // 發送連線請求
         const response = await fetch(finalUrl);
         const result = await response.json();
 
@@ -21,14 +22,16 @@ async function verify() {
             msg.style.color = "#00e676";
             msg.innerText = "驗證成功！正在跳轉...";
             setTimeout(() => {
+                // 跳轉至 SurveyCake
                 window.top.location.href = atob(result.url);
             }, 800);
         } else {
             msg.style.color = "#ff5252";
             msg.innerText = "授權碼無效";
+            inputField.value = "";
         }
     } catch (err) {
-        console.error("詳細錯誤訊息:", err);
-        msg.innerText = "系統連線失敗，請稍後再試";
+        console.error("錯誤:", err);
+        msg.innerText = "系統連線失敗，請檢查權限";
     }
 }
