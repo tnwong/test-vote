@@ -10,15 +10,15 @@
         input { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; background: #3c4043; border: 1px solid #555; color: white; border-radius: 4px; outline: none; text-align: center; }
         input:focus { border-color: #00e676; }
         button { width: 100%; padding: 12px; background: #00e676; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 10px; }
-        #msg { margin-top: 20px; font-size: 14px; min-height: 20px; color: #aaa; }
+        #msg { margin-top: 20px; font-size: 14px; min-height: 20px; color: #00e676; }
     </style>
 </head>
 <body>
 
 <div class="login-box">
-    <h3>系統驗證</h3>
+    <h3>驗證登入</h3>
     <input type="password" id="userInput" placeholder="請輸入授權碼..." onkeypress="if(event.key==='Enter') verify()">
-    <button onclick="verify()">確認登入</button>
+    <button onclick="verify()">確認</button>
     <p id="msg">系統就緒</p>
 </div>
 
@@ -28,8 +28,8 @@
         const input = inputField.value.trim();
         const msg = document.getElementById('msg');
         
-        // --- 這裡放入你的 Google Apps Script 連結 ---
-        const api_url = "https://script.google.com/macros/s/AKfycbwQdzj45jizZN4tkiPn8uU3CeRadlb03v3LPAs5esG_s0JuC6dHabOcxw2SJD8fGxNC/exec";
+        // 這是你提供的 Apps Script 連結
+        const api_url = "https://script.google.com/macros/s/AKfycbzFxnRwSyqjIsDa8itFRDQXjIqvmAMp0Unp7LWeMOFnItUiz78OsQINNScE9AgS9RPS/exec";
 
         if (!input) {
             msg.innerText = "請輸入代碼";
@@ -42,26 +42,17 @@
         inputField.disabled = true;
 
         try {
-            // 向 Google Apps Script 發送驗證請求
-            const response = await fetch(api_url, {
-                method: "POST",
-                mode: "no-cors", // 重要：Google Apps Script 的 POST 請求通常需要處理轉向
-                body: JSON.stringify({ key: input })
-            });
-
-            /* 注意：由於 Google Apps Script 的 CORS 限制，no-cors 模式下無法讀取 response 內容。
-               最穩定的做法是在 Apps Script 使用 GET 請求，或者按照下方邏輯處理：
-            */
+            // 使用 GET 方式請求，這在 Google Apps Script 中最穩定，能避開大部分跨網域問題
+            const final_url = api_url + "?key=" + encodeURIComponent(input);
             
-            // 重新發送一個允許讀取結果的請求 (如果 Apps Script 已處理 CORS)
-            const realResponse = await fetch(api_url + "?key=" + encodeURIComponent(input));
-            const result = await realResponse.json();
+            const response = await fetch(final_url);
+            const result = await response.json();
 
             if (result.status === "success") {
                 msg.style.color = "#00e676";
                 msg.innerText = "驗證成功！正在跳轉...";
                 setTimeout(() => {
-                    // 使用 Base64 解碼跳轉到你的目的地
+                    // 跳轉至 SurveyCake
                     window.top.location.href = atob(result.url);
                 }, 800);
             } else {
@@ -69,10 +60,11 @@
                 msg.style.color = "#ff5252";
                 inputField.disabled = false;
                 inputField.value = "";
+                inputField.focus();
             }
         } catch (err) {
             console.error(err);
-            msg.innerText = "驗證過程發生錯誤";
+            msg.innerText = "系統連線失敗，請稍後再試";
             msg.style.color = "#ff5252";
             inputField.disabled = false;
         }
