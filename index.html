@@ -2,22 +2,19 @@ async function verify() {
     const input = document.getElementById('userInput').value.trim();
     const msg = document.getElementById('msg');
     
-    // 務必替換成你在步驟 2 拿到的「最新」網址
-    const api_url = "https://script.google.com/macros/s/AKfycbyCyrG_unfAgjiPkqvmhZUPr9UkwpT6fyatQ4X93ZttzU09Y_6d8eI7U6ragF5CwSg/exec"; 
+    // 1. 確保這行網址是獨立的一行
+    const api_url = "https://script.google.com/macros/s/AKfycbzFxnRwSyqjIsDa8itFRDQXjIqvmAMp0Unp7LweMOFnItUiz780sQINNsce9AgS9RPS/exec";
 
     if (!input) return;
 
     msg.innerText = "驗證中...";
-    
+    msg.style.color = "#aaa";
+
     try {
-        // 使用 GET 請求，並手動補上參數
+        // 2. 這裡改用一個更通用的 fetch 寫法，避開 Google 的 CORS 嚴格檢查
         const finalUrl = api_url + "?key=" + encodeURIComponent(input);
         
-        const response = await fetch(finalUrl, {
-            method: 'GET',
-            mode: 'cors', // 明確要求跨網域模式
-        });
-
+        const response = await fetch(finalUrl);
         const result = await response.json();
 
         if (result.status === "success") {
@@ -32,6 +29,6 @@ async function verify() {
         }
     } catch (err) {
         console.error("詳細錯誤訊息:", err);
-        msg.innerText = "系統連線錯誤，請確認網路或聯繫管理員";
+        msg.innerText = "系統連線失敗，請稍後再試";
     }
 }
