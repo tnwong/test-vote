@@ -1,38 +1,49 @@
-async function verify() {
-    const inputField = document.getElementById('userInput');
-    const input = inputField.value.trim();
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 200px; margin: 0; }
+    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 280px; text-align: center; border: 1px solid #eee; }
+    h2 { font-size: 20px; color: #1a73e8; margin: 0 0 15px 0; }
+    input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 6px; box-sizing: border-box; font-size: 16px; text-align: center; outline: none; }
+    button { width: 100%; padding: 12px; background-color: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; }
+    #msg { margin-top: 12px; font-size: 13px; color: #666; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>投票者登入</h2>
+  <input type="password" id="pw" placeholder="請輸入授權碼" onkeypress="if(event.key==='Enter') startVerify()">
+  <button onclick="startVerify()">開始驗證</button>
+  <p id="msg">輸入代碼後將開啟驗證視窗</p>
+</div>
+
+<script>
+  function startVerify() {
+    const pw = document.getElementById('pw').value.trim();
     const msg = document.getElementById('msg');
     
-    // 網址必須單獨一行，不能跟在 // 後面
+    // 已更新為你提供的最新 API 網址
+    const apiUrl = "https://script.google.com/macros/s/AKfycbxAp6gezTUSjY24UYTR-MvDdjf8nl3phjDEFoE10QMSITZcBxrQw1vg2xeWfCrhXl4a/exec";
 
-    const api_url = "https://script.google.com/macros/s/AKfycbzFxnRwSyqjIsDa8itFRDQXjIqvmAMp0Unp7LweMOFnItUiz780sQINNsce9AgS9RPS/exec";
-
-    if (!input) return;
-
-    msg.innerText = "驗證中...";
-    msg.style.color = "#aaa";
-
-    try {
-        const finalUrl = api_url + "?key=" + encodeURIComponent(input);
-        
-        // 發送連線請求
-        const response = await fetch(finalUrl);
-        const result = await response.json();
-
-        if (result.status === "success") {
-            msg.style.color = "#00e676";
-            msg.innerText = "驗證成功！正在跳轉...";
-            setTimeout(() => {
-                // 跳轉至 SurveyCake
-                window.top.location.href = atob(result.url);
-            }, 800);
-        } else {
-            msg.style.color = "#ff5252";
-            msg.innerText = "授權碼無效";
-            inputField.value = "";
-        }
-    } catch (err) {
-        console.error("錯誤:", err);
-        msg.innerText = "系統連線失敗，請檢查權限";
+    if (!pw) {
+      msg.innerText = "⚠️ 請輸入代碼";
+      msg.style.color = "red";
+      return;
     }
-}
+
+    msg.innerText = "⏳ 正在開啟驗證視窗...";
+    
+    // 使用 _blank 在新分頁打開，徹底解決「拒絕連線」與「跳轉失敗」問題
+    const finalUrl = apiUrl + "?key=" + encodeURIComponent(pw);
+    window.open(finalUrl, '_blank');
+    
+    // 重設輸入框
+    document.getElementById('pw').value = "";
+  }
+</script>
+
+</body>
+</html>
