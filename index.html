@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>委員會成員選舉 (1-8人)</title>
+    <title>委員會成員選舉</title>
     <style>
         :root { --primary: #4a90e2; --success: #28a745; --gray: #666; }
         body { font-family: "Microsoft JhengHei", sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 10px; margin: 0; }
@@ -26,8 +26,8 @@
 <div class="container">
     <h2>委員會成員選舉</h2>
     <div class="info">
-        請選出 <strong>1 至 8 位</strong> 候選人<br>
-        ( 目前已選: <span id="counter">0</span> / 8 )
+        請選出 <strong>1 至 <span id="maxLabel">8</span> 位</strong> 候選人<br>
+        ( 目前已選: <span id="counter">0</span> / <span id="maxDisplay">8</span> )
     </div>
     
     <form id="voteForm">
@@ -39,17 +39,26 @@
 
 <script>
     // ==========================================
-    // 1. 配置與 URL 綁定
+    // 1. 配置區 (修改這裡即可調整設定)
     // ==========================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwy5DN8tQpnzx--n_kmMBx0qKwYDxVDH1L-1sYKilolbtABIzz1AtK5F5xmA2vTkr6c/exec";
-    const candidatesNames = ["陳大文", "李小華", "張志明", "王美玲", "趙又廷", "孫悟空", "周杰倫", "林俊傑", "蔡英文", "郭台銘"];
-    const MAX_VOTES = 8;
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx26kVJyv1e0ESn6KA5fhi7D6n7DxhAyIhH-agaJdA-7rlf6pWTPqSe3eFxRC6QzsBA/exec";
+    
+    // 候選人名單 (可自由增減)
+    const candidatesNames = [
+        "陳大文", "李小華", "張志明", "王美玲", "趙又廷", 
+        "孫悟空", "周杰倫", "林俊傑", "蔡英文", "郭台銘"
+    ];
+    
+    // 最大勾選數量
+    const MAX_VOTES = 8; 
 
     // ==========================================
-    // 2. 初始化候選人列表
+    // 2. 初始化畫面
     // ==========================================
     const listContainer = document.getElementById('candidateList');
     const counterDisplay = document.getElementById('counter');
+    document.getElementById('maxLabel').textContent = MAX_VOTES;
+    document.getElementById('maxDisplay').textContent = MAX_VOTES;
 
     candidatesNames.forEach((name, i) => {
         const label = document.createElement('label');
@@ -61,9 +70,6 @@
         listContainer.appendChild(label);
     });
 
-    // ==========================================
-    // 3. 多選邏輯限制 (不超過 8 名)
-    // ==========================================
     const checkboxes = document.querySelectorAll('input[name="candidate"]');
     
     listContainer.addEventListener('change', () => {
@@ -74,7 +80,7 @@
             const item = cb.parentElement;
             item.classList.toggle('selected', cb.checked);
             
-            // 選滿 8 個後，禁用其他未勾選框
+            // 超過上限時禁用
             if (selectedCount >= MAX_VOTES) {
                 if (!cb.checked) {
                     cb.disabled = true;
@@ -88,11 +94,12 @@
     });
 
     // ==========================================
-    // 4. Google Sites 專用提交邏輯 (iframe 表單法)
+    // 3. 提交邏輯 (包含名單確認功能)
     // ==========================================
     document.getElementById('voteForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
+        // 取得已勾選名單
         const selected = Array.from(document.querySelectorAll('input[name="candidate"]:checked')).map(cb => cb.value);
         
         if (selected.length === 0) {
@@ -100,13 +107,18 @@
             return;
         }
 
-        if (!confirm(`您已選擇 ${selected.length} 位候選人，確定提交？`)) return;
+        // --- 核心改進：確認視窗顯示名單 ---
+        const namesText = selected.map((name, i) => `${i + 1}. ${name}`).join('\n');
+        const confirmMsg = `您總共選擇了 ${selected.length} 位候選人：\n\n${namesText}\n\n確認要提交投票嗎？`;
+
+        if (!confirm(confirmMsg)) return;
+        // ------------------------------
 
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.textContent = "正在傳送...";
 
-        // 建立動態表單以繞過 Google Sites 沙箱限制
+        // 建立動態表單 (針對 Google Sites 穩定傳輸)
         const tempForm = document.createElement('form');
         tempForm.method = 'POST';
         tempForm.action = SCRIPT_URL;
@@ -115,17 +127,16 @@
         const input1 = document.createElement('input');
         input1.type = 'hidden';
         input1.name = 'candidates';
-        input1.value = JSON.stringify(selected);
+        input1.value = JSON.stringify(selected); // 傳送字串化的陣列
         tempForm.appendChild(input1);
 
         const input2 = document.createElement('input');
         input2.type = 'hidden';
         input2.name = 'ip';
-        // 使用瀏覽器資訊作為簡單的防重複標記
         input2.value = navigator.userAgent.length + "_" + screen.width + "x" + screen.height;
         tempForm.appendChild(input2);
 
-        // 建立或抓取隱藏的 iframe 用於背景接收回傳
+        // 建立隱藏 iframe 接收回應
         let iframe = document.getElementById('hidden_iframe');
         if (!iframe) {
             iframe = document.createElement('iframe');
@@ -138,14 +149,14 @@
         document.body.appendChild(tempForm);
         tempForm.submit();
 
-        // 延遲顯示成功訊息並清理 UI
+        // 提交後 UI 回饋
         setTimeout(() => {
             alert("投票已成功送出！");
             document.querySelector('.container').innerHTML = `
                 <div style="text-align:center; padding: 30px;">
                     <h2 style="color:var(--success);">感謝您的參與</h2>
                     <p>您的投票資料已記錄到試算表中。</p>
-                    <button onclick="window.location.reload()" style="background:var(--primary); width:auto; padding:10px 20px;">回投票頁面</button>
+                    <button onclick="window.location.reload()" style="background:var(--primary); width:auto; padding:10px 20px; border:none; color:white; border-radius:5px; cursor:pointer;">返回投票頁面</button>
                 </div>
             `;
             if (tempForm.parentNode) tempForm.parentNode.removeChild(tempForm);
