@@ -31,8 +31,7 @@
         <h2>委員會成員選舉</h2>
         <div class="counter">已選擇 <span id="countText">0</span> / 8 人</div>
         
-        <div id="candidates">
-            </div>
+        <div id="candidates"></div>
 
         <button id="submitBtn" onclick="submitVote()" disabled>確認送出</button>
     </div>
@@ -40,12 +39,16 @@
     <div id="finish-section">
         <h2 style="color: #28a745;">✅ 投票完成</h2>
         <p>您的選票已成功加密存入系統。</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="font-size: 14px; color: #888;">本頁面將於 <span id="timer">10</span> 秒後自動重設</p>
+        <button onclick="resetPage()" style="background: #666; margin-top: 10px;">立即返回首頁 (供下一位投票)</button>
     </div>
 </div>
 
 <script>
     let currentKey = "";
-    const apiUrl = "https://script.google.com/macros/s/AKfycbwgVARk_iyo3d5B95myKZl7E6tj8YZPLHvNVqECZ6Zn4CoyrL0kiz_SpJLk957p7Rfe/exec"; // ⬅️ 記得換成新的！
+    // 這是你目前最新的 GAS 網址
+    const apiUrl = "https://script.google.com/macros/s/AKfycbwgVARk_iyo3d5B95myKZl7E6tj8YZPLHvNVqECZ6Zn4CoyrL0kiz_SpJLk957p7Rfe/exec"; 
     const candidateNames = ["陳大文", "李小華", "張志明", "王美玲", "趙又廷", "孫小果", "周杰倫", "林俊傑", "蔡依林", "蕭敬騰"];
 
     // 初始化候選人列表
@@ -60,6 +63,7 @@
         container.appendChild(div);
     });
 
+    // 處理勾選計數與 8 人上限限制
     function updateCount() {
         const checked = document.querySelectorAll('input[name="candidate"]:checked');
         const count = checked.length;
@@ -73,10 +77,11 @@
             return;
         }
 
-        // 必須選擇至少 1 人才能送出
+        // 必須選擇至少 1 人才能啟用送出按鈕
         document.getElementById('submitBtn').disabled = (count === 0);
     }
 
+    // 身份驗證邏輯
     async function checkAuth() {
         const pw = document.getElementById('pw').value.trim();
         if(!pw) return;
@@ -90,12 +95,15 @@
                 document.getElementById('vote-section').style.display = 'block';
             } else {
                 document.getElementById('msg').innerText = "❌ 授權碼無效";
+                document.getElementById('msg').style.color = "red";
             }
         } catch (e) {
-            document.getElementById('msg').innerText = "⚠️ 系統繁忙";
+            document.getElementById('msg').innerText = "⚠️ 系統繁忙，請確認 GAS 權限是否設為「所有人」";
+            document.getElementById('msg').style.color = "orange";
         }
     }
 
+    // 送出選票與倒數重整邏輯
     async function submitVote() {
         const checked = document.querySelectorAll('input[name="candidate"]:checked');
         const selectedNames = Array.from(checked).map(cb => cb.value).join(", ");
@@ -105,11 +113,32 @@
         document.getElementById('vote-section').innerHTML = "⏳ 正在存入選票...";
         try {
             await fetch(`${apiUrl}?key=${encodeURIComponent(currentKey)}&vote=${encodeURIComponent(selectedNames)}`);
+            
+            // 進入完成投票畫面
             document.getElementById('vote-section').style.display = 'none';
             document.getElementById('finish-section').style.display = 'block';
+
+            // 啟動 10 秒倒數自動重設功能
+            let seconds = 10;
+            const timerElement = document.getElementById('timer');
+            const interval = setInterval(() => {
+                seconds--;
+                timerElement.innerText = seconds;
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    resetPage();
+                }
+            }, 1000);
+
         } catch (e) {
             alert("提交失敗，請重試");
+            resetPage();
         }
+    }
+
+    // 重新載入頁面（清除所有登入與勾選狀態，供下一個人投票）
+    function resetPage() {
+        window.location.reload();
     }
 </script>
 </body>
