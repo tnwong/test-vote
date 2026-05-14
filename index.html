@@ -7,14 +7,14 @@
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f7f9; padding: 20px; }
         .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        .vote-item { display: flex; align-items: center; padding: 12px; border: 1px solid #eee; margin-bottom: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .vote-item { display: flex; align-items: center; padding: 12px; border: 1px solid #eee; margin-bottom: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; text-align: left; }
         .vote-item:hover { background-color: #f0f7ff; }
         .vote-item input { margin-right: 15px; transform: scale(1.5); }
         button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; margin-top: 20px; }
         button:disabled { background: #ccc; cursor: not-allowed; }
-        #msg { color: #666; margin-top: 10px; }
+        #msg { color: #666; margin-top: 10px; font-size: 14px; }
         #vote-section, #finish-section { display: none; }
-        .counter { color: #1a73e8; font-weight: bold; margin-bottom: 15px; }
+        .counter { color: #1a73e8; font-weight: bold; margin-bottom: 15px; font-size: 18px; }
     </style>
 </head>
 <body>
@@ -41,51 +41,49 @@
         <p>您的選票已成功加密存入系統。</p>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
         <p style="font-size: 14px; color: #888;">本頁面將於 <span id="timer">10</span> 秒後自動重設</p>
-        <button onclick="resetPage()" style="background: #666; margin-top: 10px;">立即返回首頁 (供下一位投票)</button>
+        <button onclick="resetPage()" style="background: #666; margin-top: 10px;">立即重整 (供下一位投票)</button>
     </div>
 </div>
 
 <script>
     let currentKey = "";
-    // 這是你目前最新的 GAS 網址
+    // 您目前的 GAS 網頁應用程式網址
     const apiUrl = "https://script.google.com/macros/s/AKfycbwgVARk_iyo3d5B95myKZl7E6tj8YZPLHvNVqECZ6Zn4CoyrL0kiz_SpJLk957p7Rfe/exec"; 
-    const candidateNames = ["陳大文", "李小華", "張志明", "王美玲", "趙又廷", "孫小果", "周杰倫", "林俊傑", "蔡依林", "蕭敬騰"];
+    const candidateNames = ["01. 陳大文", "02. 李小華", "03. 張志明", "04. 王美玲", "05. 趙又廷", "06. 孫小果", "07. 周杰倫", "08. 林俊傑", "09. 蔡依林", "10. 蕭敬騰"];
 
     // 初始化候選人列表
     const container = document.getElementById('candidates');
-    candidateNames.forEach((name, index) => {
+    candidateNames.forEach((name) => {
         const div = document.createElement('div');
         div.className = 'vote-item';
-        div.innerHTML = `<label style="display:flex; width:100%; cursor:pointer;">
+        div.innerHTML = `<label style="display:flex; width:100%; cursor:pointer; align-items:center;">
             <input type="checkbox" name="candidate" value="${name}" onchange="updateCount()">
-            ${index + 1}. ${name}
+            ${name}
         </label>`;
         container.appendChild(div);
     });
 
-    // 處理勾選計數與 8 人上限限制
+    // 更新計數與限制
     function updateCount() {
         const checked = document.querySelectorAll('input[name="candidate"]:checked');
         const count = checked.length;
         document.getElementById('countText').innerText = count;
         
-        // 限制最多 8 人，超過就取消最後一個勾選
         if (count > 8) {
             alert("最多只能選擇 8 位候選人！");
             event.target.checked = false;
             updateCount();
             return;
         }
-
-        // 必須選擇至少 1 人才能啟用送出按鈕
         document.getElementById('submitBtn').disabled = (count === 0);
     }
 
-    // 身份驗證邏輯
+    // 驗證身份
     async function checkAuth() {
         const pw = document.getElementById('pw').value.trim();
         if(!pw) return;
-        document.getElementById('msg').innerText = "⏳ 驗證中...";
+        const msg = document.getElementById('msg');
+        msg.innerText = "⏳ 驗證中...";
         try {
             const resp = await fetch(`${apiUrl}?key=${encodeURIComponent(pw)}`);
             const data = await resp.json();
@@ -94,31 +92,31 @@
                 document.getElementById('auth-section').style.display = 'none';
                 document.getElementById('vote-section').style.display = 'block';
             } else {
-                document.getElementById('msg').innerText = "❌ 授權碼無效";
-                document.getElementById('msg').style.color = "red";
+                msg.innerText = "❌ 授權碼無效";
+                msg.style.color = "red";
             }
         } catch (e) {
-            document.getElementById('msg').innerText = "⚠️ 系統繁忙，請確認 GAS 權限是否設為「所有人」";
-            document.getElementById('msg').style.color = "orange";
+            msg.innerText = "⚠️ 系統繁忙，請檢查 GAS 權限是否設為「所有人」";
         }
     }
 
-    // 送出選票與倒數重整邏輯
+    // 送出投票
     async function submitVote() {
         const checked = document.querySelectorAll('input[name="candidate"]:checked');
-        const selectedNames = Array.from(checked).map(cb => cb.value).join(", ");
+        // 將名單轉為一行一個的格式顯示在確認視窗
+        const selectedNamesList = Array.from(checked).map(cb => cb.value).join("\n");
         
-        if(!confirm(`您選擇了：\n${selectedNames}\n確定要送出嗎？`)) return;
+        if(!confirm(`您選擇了：\n${selectedNamesList}\n\n確定要送出嗎？`)) return;
 
-        document.getElementById('vote-section').innerHTML = "⏳ 正在存入選票...";
+        document.getElementById('vote-section').innerHTML = "⏳ 正在傳送選票...";
         try {
-            await fetch(`${apiUrl}?key=${encodeURIComponent(currentKey)}&vote=${encodeURIComponent(selectedNames)}`);
+            const finalNamesString = Array.from(checked).map(cb => cb.value).join(", ");
+            await fetch(`${apiUrl}?key=${encodeURIComponent(currentKey)}&vote=${encodeURIComponent(finalNamesString)}`);
             
-            // 進入完成投票畫面
             document.getElementById('vote-section').style.display = 'none';
             document.getElementById('finish-section').style.display = 'block';
 
-            // 啟動 10 秒倒數自動重設功能
+            // 10秒倒數重整
             let seconds = 10;
             const timerElement = document.getElementById('timer');
             const interval = setInterval(() => {
@@ -129,16 +127,14 @@
                     resetPage();
                 }
             }, 1000);
-
         } catch (e) {
-            alert("提交失敗，請重試");
+            alert("提交失敗，請檢查網路連線");
             resetPage();
         }
     }
 
-    // 重新載入頁面（清除所有登入與勾選狀態，供下一個人投票）
     function resetPage() {
-        window.location.reload();
+        window.location.reload(); 
     }
 </script>
 </body>
