@@ -3,49 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>投票者驗證</title>
+    <title>身份驗證系統</title>
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f8f9fa; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 320px; }
         input { width: 100%; padding: 12px; margin: 20px 0; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box; font-size: 18px; text-align: center; }
-        button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button, .btn-vote { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; text-decoration: none; display: block; }
+        .btn-vote { background: #ed5b77; margin-top: 20px; }
         #msg { margin-top: 15px; font-size: 14px; color: #666; }
+        /* 初始隱藏投票區域 */
+        #vote-section { display: none; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>身份驗證</h2>
-    <input type="password" id="pw" placeholder="請輸入授權碼">
-    <button onclick="check()">驗證並進入</button>
-    <p id="msg">請輸入白名單代碼</p>
+    <div id="auth-section">
+        <h2>身份驗證</h2>
+        <input type="password" id="pw" placeholder="請輸入授權碼">
+        <button onclick="check()">驗證並進入</button>
+        <p id="msg">請輸入白名單代碼</p>
+    </div>
+
+    <div id="vote-section">
+        <h2 style="color: #28a745;">✅ 驗證成功</h2>
+        <p>您已取得投票資格，請點擊下方按鈕</p>
+        <a href="https://www.surveycake.com/s/42bm7?ssn=510130mtc" class="btn-vote">開始投票 (SurveyCake)</a>
+    </div>
 </div>
 
 <script>
     async function check() {
         const pw = document.getElementById('pw').value.trim();
         const msg = document.getElementById('msg');
-        // ⚠️ 這是你最新的 GAS API 網址 (結尾是 /exec)
-        const apiUrl = "https://script.google.com/macros/s/AKfycbw3sS_eyrGCgkhx0NngR-liW0YfIx6c5FY_BkrCSpbeTvtKtiz0HTSVzblccc5ei0qN/exec";
+        // 確保這是你最新的 GAS 部署網址
+        const apiUrl = "https://script.google.com/macros/s/AKfycbzLdj3XdX1B9M2OJsDwt7AH2_EriWwwF-4ww1BOWaIPDk2VKLM7nRY-GVvPC3rCnuTD/exec";
 
         if (!pw) return;
         msg.innerText = "⏳ 驗證中...";
 
         try {
-            // 透過 fetch 向 GAS 請求驗證結果
             const resp = await fetch(`${apiUrl}?key=${encodeURIComponent(pw)}`);
             const data = await resp.json();
 
             if (data.auth === true) {
-                msg.innerText = "✅ 驗證成功，跳轉中...";
-                // 跳轉至同目錄下的 vote.html
-                window.location.href = "vote.html";
+                // 關鍵：隱藏登入框，顯示投票鈕，不切換網址
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('vote-section').style.display = 'block';
             } else {
                 msg.innerText = "❌ 代碼錯誤或不在白名單內";
                 msg.style.color = "red";
             }
         } catch (e) {
-            msg.innerText = "⚠️ 系統繁忙，請稍後再試";
+            msg.innerText = "⚠️ 系統繁忙，請檢查 GAS 部署權限是否為「所有人」";
         }
     }
 </script>
