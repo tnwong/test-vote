@@ -26,7 +26,7 @@
         const pw = document.getElementById('pw').value.trim();
         const msg = document.getElementById('msg');
         // ⚠️ 替換成你剛剛部署的最新 GAS API 網址
-        const apiUrl = "你的_GAS_API_網址";
+        const apiUrl = "https://script.google.com/macros/s/AKfycbyfOx5uzDc5bQmX5T6vVov-dJPrbsg5lpo63B4QFkirTM4qx6KiXKldN8aLJHus1xza/exec";
 
         if (!pw) return alert("請輸入代碼");
 
