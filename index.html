@@ -1,57 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>身份驗證</title>
+    <title>投票者驗證</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
-        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 300px; }
-        input { width: 100%; padding: 12px; margin: 20px 0; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        #msg { color: #666; font-size: 14px; margin-top: 15px; }
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f8f9fa; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+        input { width: 100%; padding: 12px; margin: 20px 0; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box; font-size: 18px; text-align: center; }
+        button { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        #msg { margin-top: 15px; font-size: 14px; color: #666; }
     </style>
 </head>
 <body>
 
-<div class="login-box">
-    <h2>投票者登入</h2>
+<div class="card">
+    <h2>身份驗證</h2>
     <input type="password" id="pw" placeholder="請輸入授權碼">
-    <button onclick="checkAuth()">驗證並進入</button>
-    <p id="msg"></p>
+    <button onclick="check()">驗證並進入</button>
+    <p id="msg">請輸入白名單代碼</p>
 </div>
 
 <script>
-    async function checkAuth() {
+    async function check() {
         const pw = document.getElementById('pw').value.trim();
         const msg = document.getElementById('msg');
-        // ⚠️ 替換成你剛剛部署的最新 GAS API 網址
-        const apiUrl = "https://script.google.com/macros/s/AKfycbyfOx5uzDc5bQmX5T6vVov-dJPrbsg5lpo63B4QFkirTM4qx6KiXKldN8aLJHus1xza/exec";
+        // ⚠️ 這是你最新的 GAS API 網址 (結尾是 /exec)
+        const apiUrl = "https://script.google.com/macros/s/AKfycbzLdj3XdX1B9M2OJsDwt7AH2_EriWwwF-4ww1BOWaIPDk2VKLM7nRY-GVvPC3rCnuTD/exec";
 
-        if (!pw) return alert("請輸入代碼");
-
-        msg.innerText = "⏳ 驗證中，請稍候...";
+        if (!pw) return;
+        msg.innerText = "⏳ 驗證中...";
 
         try {
-            // 向 GAS 請求驗證
-            const response = await fetch(`${apiUrl}?key=${encodeURIComponent(pw)}`);
-            const result = await response.json();
+            // 透過 fetch 向 GAS 請求驗證結果
+            const resp = await fetch(`${apiUrl}?key=${encodeURIComponent(pw)}`);
+            const data = await resp.json();
 
-            if (result.auth === true) {
-                msg.style.color = "green";
-                msg.innerText = "✅ 驗證成功！跳轉中...";
-                // 登入成功，跳轉到同目錄下的 vote.html
+            if (data.auth === true) {
+                msg.innerText = "✅ 驗證成功，跳轉中...";
+                // 跳轉至同目錄下的 vote.html
                 window.location.href = "vote.html";
             } else {
+                msg.innerText = "❌ 代碼錯誤或不在白名單內";
                 msg.style.color = "red";
-                msg.innerText = "❌ 授權碼無效";
             }
-        } catch (error) {
-            msg.innerText = "⚠️ 系統連線錯誤，請稍後再試";
-            console.error(error);
+        } catch (e) {
+            msg.innerText = "⚠️ 系統繁忙，請稍後再試";
         }
     }
 </script>
-
 </body>
 </html>
