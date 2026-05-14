@@ -8,7 +8,7 @@
         body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f7f9; padding: 20px; }
         .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; box-sizing: border-box; }
         
-        /* 修正不對稱：為候選人區塊建立一個最大寬度並在卡片內置中 */
+        /* 確保候選人清單在卡片內完美置中且靠左對齊 */
         #candidates { max-width: 280px; margin: 0 auto; text-align: left; }
         
         .vote-item { display: flex; align-items: center; padding: 12px; border: 1px solid #eee; margin-bottom: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; box-sizing: border-box; }
@@ -27,7 +27,10 @@
 <div class="card">
     <div id="auth-section">
         <h2>身份驗證</h2>
-        <input type="password" id="pw" style="width:100%; padding:15px; margin:20px 0; border:2px solid #ddd; border-radius:10px; text-align:center; box-sizing: border-box;" placeholder="請輸入授權碼">
+        <input type="password" id="pw" 
+               onkeydown="if(event.key === 'Enter') checkAuth()"
+               style="width:100%; padding:15px; margin:20px 0; border:2px solid #ddd; border-radius:10px; text-align:center; box-sizing: border-box;" 
+               placeholder="請輸入授權碼">
         <button onclick="checkAuth()">進入投票系統</button>
         <p id="msg">驗證通過後即可選擇 1-8 名候選人</p>
     </div>
@@ -101,6 +104,7 @@
             }
         } catch (e) {
             msg.innerText = "⚠️ 系統繁忙，請檢查 GAS 權限是否設為「所有人」";
+            msg.style.color = "orange";
         }
     }
 
