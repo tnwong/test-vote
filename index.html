@@ -6,10 +6,15 @@
     <title>委員會成員選舉 (10選8)</title>
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f7f9; padding: 20px; }
-        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        .vote-item { display: flex; align-items: center; padding: 12px; border: 1px solid #eee; margin-bottom: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; text-align: left; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; box-sizing: border-box; }
+        
+        /* 修正不對稱：為候選人區塊建立一個最大寬度並在卡片內置中 */
+        #candidates { max-width: 280px; margin: 0 auto; text-align: left; }
+        
+        .vote-item { display: flex; align-items: center; padding: 12px; border: 1px solid #eee; margin-bottom: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; box-sizing: border-box; }
         .vote-item:hover { background-color: #f0f7ff; }
-        .vote-item input { margin-right: 15px; transform: scale(1.5); }
+        .vote-item input { margin-right: 15px; transform: scale(1.5); flex-shrink: 0; }
+        
         button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; margin-top: 20px; }
         button:disabled { background: #ccc; cursor: not-allowed; }
         #msg { color: #666; margin-top: 10px; font-size: 14px; }
@@ -22,7 +27,7 @@
 <div class="card">
     <div id="auth-section">
         <h2>身份驗證</h2>
-        <input type="password" id="pw" style="width:100%; padding:15px; margin:20px 0; border:2px solid #ddd; border-radius:10px; text-align:center;" placeholder="請輸入授權碼">
+        <input type="password" id="pw" style="width:100%; padding:15px; margin:20px 0; border:2px solid #ddd; border-radius:10px; text-align:center; box-sizing: border-box;" placeholder="請輸入授權碼">
         <button onclick="checkAuth()">進入投票系統</button>
         <p id="msg">驗證通過後即可選擇 1-8 名候選人</p>
     </div>
@@ -47,7 +52,6 @@
 
 <script>
     let currentKey = "";
-    // 您目前的 GAS 網頁應用程式網址
     const apiUrl = "https://script.google.com/macros/s/AKfycbwgVARk_iyo3d5B95myKZl7E6tj8YZPLHvNVqECZ6Zn4CoyrL0kiz_SpJLk957p7Rfe/exec"; 
     const candidateNames = ["01. 陳大文", "02. 李小華", "03. 張志明", "04. 王美玲", "05. 趙又廷", "06. 孫小果", "07. 周杰倫", "08. 林俊傑", "09. 蔡依林", "10. 蕭敬騰"];
 
@@ -103,7 +107,6 @@
     // 送出投票
     async function submitVote() {
         const checked = document.querySelectorAll('input[name="candidate"]:checked');
-        // 將名單轉為一行一個的格式顯示在確認視窗
         const selectedNamesList = Array.from(checked).map(cb => cb.value).join("\n");
         
         if(!confirm(`您選擇了：\n${selectedNamesList}\n\n確定要送出嗎？`)) return;
