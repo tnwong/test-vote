@@ -1,48 +1,156 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <style>
-    body { font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 200px; margin: 0; }
-    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 280px; text-align: center; border: 1px solid #eee; }
-    h2 { font-size: 20px; color: #1a73e8; margin: 0 0 15px 0; }
-    input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 6px; box-sizing: border-box; font-size: 16px; text-align: center; outline: none; }
-    button { width: 100%; padding: 12px; background-color: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; }
-    #msg { margin-top: 12px; font-size: 13px; color: #666; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>委員會成員選舉 (1-8人)</title>
+    <style>
+        :root { --primary: #4a90e2; --success: #28a745; --gray: #666; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 10px; margin: 0; }
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; width: 100%; box-sizing: border-box; }
+        h2 { text-align: center; color: #333; margin: 0 0 10px 0; }
+        .info { text-align: center; color: var(--gray); background: #eef2f5; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 0.95em; line-height: 1.5; }
+        .candidate-list { display: grid; gap: 10px; }
+        .candidate-item { display: flex; align-items: center; padding: 12px; border: 2px solid #eee; border-radius: 8px; cursor: pointer; transition: 0.2s; position: relative; }
+        .candidate-item:hover { border-color: var(--primary); }
+        .candidate-item input { margin-right: 15px; width: 18px; height: 18px; cursor: pointer; }
+        .candidate-item.selected { border-color: var(--primary); background: #f0f7ff; }
+        .candidate-item.disabled { opacity: 0.5; cursor: not-allowed; background: #fafafa; }
+        button { display: block; width: 100%; padding: 15px; margin-top: 25px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #counter { font-weight: bold; color: var(--primary); font-size: 1.1em; }
+    </style>
 </head>
 <body>
 
-<div class="card">
-  <h2>投票者登入</h2>
-  <input type="password" id="pw" placeholder="請輸入授權碼" onkeypress="if(event.key==='Enter') startVerify()">
-  <button onclick="startVerify()">開始驗證</button>
-  <p id="msg">輸入代碼後將開啟驗證視窗</p>
+<div class="container">
+    <h2>委員會成員選舉</h2>
+    <div class="info">
+        請選出 <strong>1 至 8 位</strong> 候選人<br>
+        ( 目前已選: <span id="counter">0</span> / 8 )
+    </div>
+    
+    <form id="voteForm">
+        <div class="candidate-list" id="candidateList">
+            </div>
+        <button type="submit" id="submitBtn">確認提交投票</button>
+    </form>
 </div>
 
 <script>
-  function startVerify() {
-    const pw = document.getElementById('pw').value.trim();
-    const msg = document.getElementById('msg');
-    
-    // 已更新為你提供的最新 API 網址
-    const apiUrl = "https://script.google.com/macros/s/AKfycbxAp6gezTUSjY24UYTR-MvDdjf8nl3phjDEFoE10QMSITZcBxrQw1vg2xeWfCrhXl4a/exec";
+    // ==========================================
+    // 1. 配置與 URL 綁定
+    // ==========================================
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx26kVJyv1e0ESn6KA5fhi7D6n7DxhAyIhH-agaJdA-7rlf6pWTPqSe3eFxRC6QzsBA/exec";
+    const candidatesNames = ["陳大文", "李小華", "張志明", "王美玲", "趙又廷", "孫悟空", "周杰倫", "林俊傑", "蔡英文", "郭台銘"];
+    const MAX_VOTES = 8;
 
-    if (!pw) {
-      msg.innerText = "⚠️ 請輸入代碼";
-      msg.style.color = "red";
-      return;
-    }
+    // ==========================================
+    // 2. 初始化候選人列表
+    // ==========================================
+    const listContainer = document.getElementById('candidateList');
+    const counterDisplay = document.getElementById('counter');
 
-    msg.innerText = "⏳ 正在開啟驗證視窗...";
+    candidatesNames.forEach((name, i) => {
+        const label = document.createElement('label');
+        label.className = 'candidate-item';
+        label.innerHTML = `
+            <input type="checkbox" name="candidate" value="${name}">
+            <span>${String(i + 1).padStart(2, '0')}. ${name}</span>
+        `;
+        listContainer.appendChild(label);
+    });
+
+    // ==========================================
+    // 3. 多選邏輯限制 (不超過 8 名)
+    // ==========================================
+    const checkboxes = document.querySelectorAll('input[name="candidate"]');
     
-    // 使用 _blank 在新分頁打開，徹底解決「拒絕連線」與「跳轉失敗」問題
-    const finalUrl = apiUrl + "?key=" + encodeURIComponent(pw);
-    window.open(finalUrl, '_blank');
-    
-    // 重設輸入框
-    document.getElementById('pw').value = "";
-  }
+    listContainer.addEventListener('change', () => {
+        const selectedCount = document.querySelectorAll('input[name="candidate"]:checked').length;
+        counterDisplay.textContent = selectedCount;
+
+        checkboxes.forEach(cb => {
+            const item = cb.parentElement;
+            item.classList.toggle('selected', cb.checked);
+            
+            // 選滿 8 個後，禁用其他未勾選框
+            if (selectedCount >= MAX_VOTES) {
+                if (!cb.checked) {
+                    cb.disabled = true;
+                    item.classList.add('disabled');
+                }
+            } else {
+                cb.disabled = false;
+                item.classList.remove('disabled');
+            }
+        });
+    });
+
+    // ==========================================
+    // 4. Google Sites 專用提交邏輯 (iframe 表單法)
+    // ==========================================
+    document.getElementById('voteForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const selected = Array.from(document.querySelectorAll('input[name="candidate"]:checked')).map(cb => cb.value);
+        
+        if (selected.length === 0) {
+            alert("請至少選擇一位候選人！");
+            return;
+        }
+
+        if (!confirm(`您已選擇 ${selected.length} 位候選人，確定提交？`)) return;
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.textContent = "正在傳送...";
+
+        // 建立動態表單以繞過 Google Sites 沙箱限制
+        const tempForm = document.createElement('form');
+        tempForm.method = 'POST';
+        tempForm.action = SCRIPT_URL;
+        tempForm.target = 'hidden_iframe';
+
+        const input1 = document.createElement('input');
+        input1.type = 'hidden';
+        input1.name = 'candidates';
+        input1.value = JSON.stringify(selected);
+        tempForm.appendChild(input1);
+
+        const input2 = document.createElement('input');
+        input2.type = 'hidden';
+        input2.name = 'ip';
+        // 使用瀏覽器資訊作為簡單的防重複標記
+        input2.value = navigator.userAgent.length + "_" + screen.width + "x" + screen.height;
+        tempForm.appendChild(input2);
+
+        // 建立或抓取隱藏的 iframe 用於背景接收回傳
+        let iframe = document.getElementById('hidden_iframe');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'hidden_iframe';
+            iframe.name = 'hidden_iframe';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+        }
+
+        document.body.appendChild(tempForm);
+        tempForm.submit();
+
+        // 延遲顯示成功訊息並清理 UI
+        setTimeout(() => {
+            alert("投票已成功送出！");
+            document.querySelector('.container').innerHTML = `
+                <div style="text-align:center; padding: 30px;">
+                    <h2 style="color:var(--success);">感謝您的參與</h2>
+                    <p>您的投票資料已記錄到試算表中。</p>
+                    <button onclick="window.location.reload()" style="background:var(--primary); width:auto; padding:10px 20px;">回投票頁面</button>
+                </div>
+            `;
+            if (tempForm.parentNode) tempForm.parentNode.removeChild(tempForm);
+        }, 1500);
+    });
 </script>
 
 </body>
