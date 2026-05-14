@@ -3,46 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>內部投票系統</title>
+    <title>委員會成員選舉 (10選8)</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f7f9; }
-        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); text-align: center; width: 340px; }
-        input { width: 100%; padding: 15px; margin: 20px 0; border: 2px solid #eee; border-radius: 10px; font-size: 18px; box-sizing: border-box; text-align: center; }
-        button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px; }
-        .vote-btn { background: white; color: #1a73e8; border: 2px solid #1a73e8; }
-        .vote-btn:hover { background: #1a73e8; color: white; }
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f7f9; padding: 20px; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        .vote-item { display: flex; align-items: center; padding: 12px; border: 1px solid #eee; margin-bottom: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .vote-item:hover { background-color: #f0f7ff; }
+        .vote-item input { margin-right: 15px; transform: scale(1.5); }
+        button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; margin-top: 20px; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #msg { color: #666; margin-top: 10px; }
         #vote-section, #finish-section { display: none; }
-        #msg { color: #666; font-size: 14px; margin-top: 10px; }
+        .counter { color: #1a73e8; font-weight: bold; margin-bottom: 15px; }
     </style>
 </head>
 <body>
+
 <div class="card">
     <div id="auth-section">
         <h2>身份驗證</h2>
-        <input type="password" id="pw" placeholder="請輸入授權碼">
-        <button onclick="checkAuth()">驗證身份</button>
-        <p id="msg">驗證後即可直接進行投票</p>
+        <input type="password" id="pw" style="width:100%; padding:15px; margin:20px 0; border:2px solid #ddd; border-radius:10px; text-align:center;" placeholder="請輸入授權碼">
+        <button onclick="checkAuth()">進入投票系統</button>
+        <p id="msg">驗證通過後即可選擇 1-8 名候選人</p>
     </div>
+
     <div id="vote-section">
-        <h2 style="color: #1a73e8;">請選擇您的選票</h2>
-        <button class="vote-btn" onclick="submitVote('選項 A')">選項 A</button>
-        <button class="vote-btn" onclick="submitVote('選項 B')">選項 B</button>
-        <button class="vote-btn" onclick="submitVote('棄權')">棄權</button>
+        <h2>委員會成員選舉</h2>
+        <div class="counter">已選擇 <span id="countText">0</span> / 8 人</div>
+        
+        <div id="candidates">
+            </div>
+
+        <button id="submitBtn" onclick="submitVote()" disabled>確認送出</button>
     </div>
+
     <div id="finish-section">
-        <h2 style="color: #28a745;">✅ 投票成功</h2>
-        <p>結果已自動存入試算表。</p>
+        <h2 style="color: #28a745;">✅ 投票完成</h2>
+        <p>您的選票已成功加密存入系統。</p>
     </div>
 </div>
+
 <script>
     let currentKey = "";
-    const apiUrl = "https://script.google.com/macros/s/AKfycbwwMNhXzke2aLFUjoWVrkDaHJ6nzg4knxUQzL47rdoQ9nB1V5t85JUHvuiE4xHU5wr2/exec"; // ⬅️ 請貼上剛才產生的網址
+    const apiUrl = "你的_GAS_部署網址"; // ⬅️ 記得換成新的！
+    const candidateNames = ["陳大文", "李小華", "張志明", "王美玲", "趙又廷", "孫小果", "周杰倫", "林俊傑", "蔡依林", "蕭敬騰"];
+
+    // 初始化候選人列表
+    const container = document.getElementById('candidates');
+    candidateNames.forEach((name, index) => {
+        const div = document.createElement('div');
+        div.className = 'vote-item';
+        div.innerHTML = `<label style="display:flex; width:100%; cursor:pointer;">
+            <input type="checkbox" name="candidate" value="${name}" onchange="updateCount()">
+            ${index + 1}. ${name}
+        </label>`;
+        container.appendChild(div);
+    });
+
+    function updateCount() {
+        const checked = document.querySelectorAll('input[name="candidate"]:checked');
+        const count = checked.length;
+        document.getElementById('countText').innerText = count;
+        
+        // 限制最多 8 人，超過就取消最後一個勾選
+        if (count > 8) {
+            alert("最多只能選擇 8 位候選人！");
+            event.target.checked = false;
+            updateCount();
+            return;
+        }
+
+        // 必須選擇至少 1 人才能送出
+        document.getElementById('submitBtn').disabled = (count === 0);
+    }
 
     async function checkAuth() {
         const pw = document.getElementById('pw').value.trim();
-        const msg = document.getElementById('msg');
         if(!pw) return;
-        msg.innerText = "⏳ 正在連線...";
+        document.getElementById('msg').innerText = "⏳ 驗證中...";
         try {
             const resp = await fetch(`${apiUrl}?key=${encodeURIComponent(pw)}`);
             const data = await resp.json();
@@ -51,23 +89,26 @@
                 document.getElementById('auth-section').style.display = 'none';
                 document.getElementById('vote-section').style.display = 'block';
             } else {
-                msg.innerText = "❌ 授權碼無效";
-                msg.style.color = "red";
+                document.getElementById('msg').innerText = "❌ 授權碼無效";
             }
         } catch (e) {
-            msg.innerText = "⚠️ 仍無法連線，請確認 GAS 權限為「所有人」";
+            document.getElementById('msg').innerText = "⚠️ 系統繁忙";
         }
     }
 
-    async function submitVote(name) {
-        if(!confirm(`確定投給「${name}」嗎？`)) return;
-        document.getElementById('vote-section').innerHTML = "⏳ 正在傳送選票...";
+    async function submitVote() {
+        const checked = document.querySelectorAll('input[name="candidate"]:checked');
+        const selectedNames = Array.from(checked).map(cb => cb.value).join(", ");
+        
+        if(!confirm(`您選擇了：\n${selectedNames}\n確定要送出嗎？`)) return;
+
+        document.getElementById('vote-section').innerHTML = "⏳ 正在存入選票...";
         try {
-            await fetch(`${apiUrl}?key=${encodeURIComponent(currentKey)}&vote=${encodeURIComponent(name)}`);
+            await fetch(`${apiUrl}?key=${encodeURIComponent(currentKey)}&vote=${encodeURIComponent(selectedNames)}`);
             document.getElementById('vote-section').style.display = 'none';
             document.getElementById('finish-section').style.display = 'block';
         } catch (e) {
-            alert("傳送失敗");
+            alert("提交失敗，請重試");
         }
     }
 </script>
